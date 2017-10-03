@@ -34,10 +34,10 @@ public class JDBCExample {
     
     public static void main(String args[]){
         try {
-            String url="jdbc:mysql://HOST:3306/BD";
+            String url="jdbc:mysql://desarrollo.is.escuelaing.edu.co:3306/bdprueba";
             String driver="com.mysql.jdbc.Driver";
-            String user="USER";
-            String pwd="PWD";
+            String user="bdprueba";
+            String pwd="bdprueba";
                         
             Class.forName(driver);
             Connection con=DriverManager.getConnection(url,user,pwd);
@@ -57,10 +57,12 @@ public class JDBCExample {
             System.out.println("-----------------------");
             
             
-            int suCodigoECI=20134423;
-            registrarNuevoProducto(con, suCodigoECI, "SU NOMBRE", 99999999);            
+            int suCodigoECI=2109734;
+            //registrarNuevoProducto(con, suCodigoECI, "Daniela Gonzalez", 99999999); 
+            //registrarNuevoProducto(con, 2108310, "Diana Sanchez", 99999999);
             con.commit();
-                        
+                     
+            consultaNombres(con);
             
             con.close();
                                    
@@ -81,9 +83,16 @@ public class JDBCExample {
      */
     public static void registrarNuevoProducto(Connection con, int codigo, String nombre,int precio) throws SQLException{
         //Crear preparedStatement
+        PreparedStatement insertProductos = null;
         //Asignar parámetros
+        String updateStatement = "insert " + "ORD_PRODUCTOS " + "set codigo=?, nombre=?, precio=?"; 
+        insertProductos=con.prepareStatement(updateStatement);
+        insertProductos.setInt(1, codigo);
+        insertProductos.setString(2, nombre);
+        insertProductos.setInt(3,precio);
         //usar 'execute'
-
+        insertProductos.executeUpdate();
+        
         
         con.commit();
         
@@ -98,11 +107,27 @@ public class JDBCExample {
     public static List<String> nombresProductosPedido(Connection con, int codigoPedido){
         List<String> np=new LinkedList<>();
         
-        //Crear prepared statement
+       //Crear prepared statement
+        PreparedStatement consultNombres = null;
         //asignar parámetros
-        //usar executeQuery
-        //Sacar resultados del ResultSet
-        //Llenar la lista y retornarla
+        String updateStatement =
+        "select ORD_PRODUCTOS.nombre " +
+        "from " + "(ORD_PEDIDOS JOIN ORD_DETALLES_PEDIDO ON pedido_fk=ORD_PEDIDOS.codigo) JOIN ORD_PRODUCTOS ON producto_fk=ORD_PRODUCTOS.codigo";
+   
+        try{
+            consultNombres=con.prepareStatement(updateStatement);
+            //usar executeQuery
+            ResultSet rs=consultNombres.executeQuery();
+            while (rs.next()) {
+                //Sacar resultado del ResultSet
+                String nombre=rs.getString("nombre");
+                //Llenar la lista y retornarla
+                np.add(nombre);
+            }
+        }catch (SQLException e){
+            e.printStackTrace();
+        }
+        
         
         return np;
     }
@@ -115,15 +140,52 @@ public class JDBCExample {
      * @return el costo total del pedido (suma de: cantidades*precios)
      */
     public static int valorTotalPedido(Connection con, int codigoPedido){
+        int total=0;
         
         //Crear prepared statement
+        PreparedStatement updateTotal = null;
         //asignar parámetros
-        //usar executeQuery
-        //Sacar resultado del ResultSet
-        
-        return 0;
+        String updateStatement =
+        "select ORD_DETALLES_PEDIDO.cantidad, ORD_PRODUCTOS.precio " +
+        "from " + "(ORD_PEDIDOS JOIN ORD_DETALLES_PEDIDO ON pedido_fk=ORD_PEDIDOS.codigo) JOIN ORD_PRODUCTOS ON producto_fk=ORD_PRODUCTOS.codigo";
+   
+        try{
+            updateTotal=con.prepareStatement(updateStatement);
+            //usar executeQuery
+            ResultSet rs=updateTotal.executeQuery();
+            while (rs.next()) {
+                //Sacar resultado del ResultSet
+                int cantidad = rs.getInt("cantidad");
+                int precio=rs.getInt("precio");
+                total+=cantidad*precio;
+            }
+        }catch (SQLException e){
+            e.printStackTrace();
+        }
+        return total;
     }
     
+    public static void consultaNombres(Connection con){
+        //Crear prepared statement
+        PreparedStatement consultNombres = null;
+        //asignar parámetros
+        String consulta =
+        "select nombre " +
+        "from " + "ORD_PRODUCTOS ";
+   
+        try{
+            consultNombres=con.prepareStatement(consulta);
+            //usar executeQuery
+            ResultSet rs=consultNombres.executeQuery();
+            while (rs.next()) {
+                //Sacar resultado del ResultSet
+                String nom=rs.getString("nombre");
+                System.out.println(nom);
+            }
+        }catch (SQLException e){
+            e.printStackTrace();
+        }
+    }
 
     
     
